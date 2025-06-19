@@ -17,15 +17,14 @@ coverage.xml
 *.log
 *.pot
 *.mo
-
 .conda/
 conda-meta/
 conda-bld/
-
 .dockerignore
 docker-compose.override.yml
-
 .idea/
 .vscode/
 *.swp
 *.swo
+.history/
+database/
