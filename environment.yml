@@ -1,0 +1,11 @@
+# environment.yml
+
+name: CV_maker
+channels:
+  - defaults
+dependencies:
+  - python=3.9
+  - pip
+  - pip:
+    - flask
+    - gunicorn
