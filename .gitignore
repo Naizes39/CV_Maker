@@ -1,6 +1,3 @@
-# .gitignore
-
-# Python
 __pycache__/
 *.pyc
 *.pyo
@@ -21,16 +18,13 @@ coverage.xml
 *.pot
 *.mo
 
-# Conda
 .conda/
 conda-meta/
 conda-bld/
 
-# Docker
 .dockerignore
 docker-compose.override.yml
 
-# IDE / Editor specific
 .idea/
 .vscode/
 *.swp
