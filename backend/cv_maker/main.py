@@ -1,7 +1,8 @@
 from .models.cv import PersonalInfo, CV
 from .models.section import *
 from .services.strategy_pdf import LaTeXStrategy
-from .cv_exceptions import GenerationError
+from .services.section_factory import SectionFactory, SectionError
+from .cv_exceptions import GenerationError, ValidationError
 from typing import Optional
 
 def ask_for_input(prompt: str, optional: bool = False) -> Optional[str]:
@@ -31,22 +32,21 @@ def get_personal_info() -> PersonalInfo:
         phone=phone, profession=profession, links=links
     )
 
-def get_summary_section() -> Optional[SummarySection]:
+def get_summary_data() -> Optional[dict]:
     if ask_for_input("Czy chcesz dodać sekcję 'Podsumowanie'? (t/n)").lower() != 't':
         return None
     
-    section = SummarySection(title="Summary")
     print("\n-- Wpisz swoje podsumowanie zawodowe --")
     summary_text = ask_for_input("Podsumowanie")
     if summary_text:
-        section.summary = summary_text
-    return section
+        return {"title": "Summary", "summary_text": summary_text}
+    return None
 
-def get_experience_section() -> Optional[ExperienceSection]:
+def get_experience_data() -> Optional[dict]:
     if ask_for_input("Czy chcesz dodać sekcję 'Doświadczenie'? (t/n)").lower() != 't':
         return None
 
-    section = ExperienceSection(title="Experience")
+    section_data = {"title": "Experience", "entries": []}
     while True:
         print("\n-- Nowy wpis: Doświadczenie --")
         job_title = ask_for_input("Stanowisko")
@@ -63,21 +63,23 @@ def get_experience_section() -> Optional[ExperienceSection]:
             else:
                 break
         
-        entry = ExperienceEntry(
-            job_title=job_title, company_name=company_name,
-            start_date=start_date, end_date=end_date, responsibilities=responsibilities
-        )
-        section.add_experience(entry)
+        if job_title and company_name and start_date:
+            entry_data = {
+                "job_title": job_title, "company_name": company_name,
+                "start_date": start_date, "end_date": end_date, "responsibilities": responsibilities
+            }
+            section_data["entries"].append(entry_data)
+        else:
+            print("Stanowisko, nazwa firmy i data rozpoczęcia są wymagane.")
         
         if ask_for_input("Dodać kolejne doświadczenie? (t/n)").lower() != 't':
             break
-    return section
+    return section_data if section_data["entries"] else None
 
-def get_education_section() -> Optional[EducationSection]:
+def get_education_data() -> Optional[dict]:
     if ask_for_input("Czy chcesz dodać sekcję 'Edukacja'? (t/n)").lower() != 't':
         return None
-        
-    section = EducationSection(title="Education")
+    section_data = {"title": "Education", "entries": []}
     while True:
         print("\n-- Nowy wpis: Edukacja --")
         university_name = ask_for_input("Nazwa uczelni")
@@ -90,60 +92,60 @@ def get_education_section() -> Optional[EducationSection]:
         end_date = ask_for_input("Data ukończenia", optional=True)
         
         if university_name and city and country and degree and field_of_study:
-            entry = EducationEntry(
-                university_name=university_name, city=city, country=country,
-                degree=degree, field_of_study=field_of_study,
-                specialization=specialization, start_date=start_date, end_date=end_date
-            )
-            section.add_education(entry)
+            entry_data = {
+                "university_name": university_name, "city": city, "country": country,
+                "degree": degree, "field_of_study": field_of_study,
+                "specialization": specialization, "start_date": start_date, "end_date": end_date
+            }
+            section_data["entries"].append(entry_data)
         else:
             print("Nazwa uczelni, miasto, kraj, tytuł i kierunek są wymagane.")
 
         if ask_for_input("Dodać kolejną uczelnię? (t/n)").lower() != 't':
             break
-    return section
+    return section_data if section_data["entries"] else None
 
-def get_skills_section() -> Optional[SkillsSection]:
+def get_skills_data() -> Optional[dict]:
     if ask_for_input("Czy chcesz dodać sekcję 'Umiejętności'? (t/n)").lower() != 't':
         return None
 
-    section = SkillsSection(title="Technical Skills")
+    section_data = {"title": "Technical Skills", "entries": []}
     while True:
         print("\n-- Nowy wpis: Umiejętność --")
         category = ask_for_input("Kategoria (np. Języki programowania)")
         name = ask_for_input("Nazwa umiejętności (np. Python)")
         
         if name and category:
-            entry = SkillEntry(name=name, level=category)
-            section.add_skill(entry)
+            entry_data = {"name": name, "level": category}
+            section_data["entries"].append(entry_data)
         else:
             print("Kategoria i nazwa umiejętności są wymagane.")
 
         if ask_for_input("Dodać kolejną umiejętność? (t/n)").lower() != 't':
             break
-    return section
+    return section_data if section_data["entries"] else None
 
-def get_projects_section() -> Optional[ProjectsSection]:
+def get_projects_data() -> Optional[dict]:
     if ask_for_input("Czy chcesz dodać sekcję 'Projekty'? (t/n)").lower() != 't':
         return None
 
-    section = ProjectsSection(title="Projects")
+    section_data = {"title": "Projects", "entries": []}
     while True:
         print("\n-- Nowy wpis: Projekt --")
         name = ask_for_input("Nazwa projektu")
         end_date = ask_for_input("Data ukończenia", optional=True)
         
         technologies = []
-        print("Podaj technologie (jedna na raz). Wciśnij Enter, aby zakończyć.")
+        print("Podaj technologie (jedna na raz). Wciśnij Enter przy pustym polu, aby zakończyć.")
         while True:
             tech = ask_for_input("Technologia")
             if tech:
                 technologies.append(tech)
             else:
                 break
-        
+
         responsibilities = []
-        print("Podaj punkty opisu projektu (jeden na raz). Wciśnij Enter, aby zakończyć.")
+        print("Podaj punkty opisu projektu (jeden na raz). Wciśnij Enter przy pustym polu, aby zakończyć.")
         while True:
             resp = ask_for_input("Opis")
             if resp:
@@ -152,64 +154,66 @@ def get_projects_section() -> Optional[ProjectsSection]:
                 break
         
         if name:
-            entry = ProjectEntry(
-                name=name, end_date=end_date,
-                technologies=technologies, responsibilities=responsibilities
-            )
-            section.add_project(entry)
+            entry_data = {
+                "name": name, "end_date": end_date,
+                "technologies": technologies, "responsibilities": responsibilities
+            }
+            section_data["entries"].append(entry_data)
         else:
             print("Nazwa projektu jest wymagana.")
 
         if ask_for_input("Dodać kolejny projekt? (t/n)").lower() != 't':
             break
-    return section
+    return section_data if section_data["entries"] else None
 
-def get_certificates_section() -> Optional[CertificatesSection]:
+def get_certificates_data() -> Optional[dict]:
     if ask_for_input("Czy chcesz dodać sekcję 'Certyfikaty'? (t/n)").lower() != 't':
         return None
 
-    section = CertificatesSection(title="Certifications")
+    section_data = {"title": "Certifications", "entries": []}
     while True:
         print("\n-- Nowy wpis: Certyfikat --")
         name = ask_for_input("Nazwa certyfikatu")
         org = ask_for_input("Organizacja wydająca")
         date = ask_for_input("Data wydania")
 
-        if name and org and date:
-            entry = CertificateEntry(name=name, issuing_organization=org, issue_date=date)
-            section.add_certificate(entry)
-        else:
+        if not (name and org and date):
             print("Nazwa, organizacja i data są wymagane.")
+            continue
+        
+        entry_data = {"name": name, "issuing_organization": org, "issue_date": date}
+        section_data["entries"].append(entry_data)
 
         if ask_for_input("Dodać kolejny certyfikat? (t/n)").lower() != 't':
             break
-    return section
+    return section_data if section_data["entries"] else None
 
-def get_languages_section() -> Optional[LanguagesSection]:
+def get_languages_data() -> Optional[dict]:
     if ask_for_input("Czy chcesz dodać sekcję 'Języki'? (t/n)").lower() != 't':
         return None
 
-    section = LanguagesSection(title="Languages")
+    section_data = {"title": "Languages", "entries": []}
     while True:
         print("\n-- Nowy wpis: Język --")
         lang = ask_for_input("Język")
         prof = ask_for_input("Poziom (np. Native, Fluent, C1)")
 
-        if lang and prof:
-            entry = LanguageEntry(language=lang, proficiency=prof)
-            section.add_language(entry)
-        else:
+        if not (lang and prof):
             print("Język i poziom są wymagane.")
+            continue
+        
+        entry_data = {"language": lang, "proficiency": prof}
+        section_data["entries"].append(entry_data)
 
         if ask_for_input("Dodać kolejny język? (t/n)").lower() != 't':
             break
-    return section
+    return section_data if section_data["entries"] else None
 
-def get_awards_section() -> Optional[AwardsSection]:
+def get_awards_data() -> Optional[dict]:
     if ask_for_input("Czy chcesz dodać sekcję 'Nagrody'? (t/n)").lower() != 't':
         return None
 
-    section = AwardsSection(title="Awards")
+    section_data = {"title": "Awards", "entries": []}
     while True:
         print("\n-- Nowy wpis: Nagroda --")
         name = ask_for_input("Nazwa nagrody")
@@ -217,45 +221,47 @@ def get_awards_section() -> Optional[AwardsSection]:
         date = ask_for_input("Data")
         description = ask_for_input("Opis", optional=True)
 
-        if name and awarded_by and date:
-            entry = AwardEntry(name=name, awarded_by=awarded_by, date=date, description=description)
-            section.add_award(entry)
-        else:
+        if not (name and awarded_by and date):
             print("Nazwa, organizacja przyznająca i data są wymagane.")
+            continue
+        
+        entry_data = {"name": name, "awarded_by": awarded_by, "date": date, "description": description}
+        section_data["entries"].append(entry_data)
 
         if ask_for_input("Dodać kolejną nagrodę? (t/n)").lower() != 't':
             break
-    return section
+    return section_data if section_data["entries"] else None
 
 def run_cv_creator():
     personal_info = get_personal_info()
     main_cv = CV(personal_info=personal_info)
     
     print("\n--- Krok 2: Dodawanie Sekcji ---")
-    
-    if summary_section := get_summary_section():
-        main_cv.add_section(summary_section)
+    sections_to_create = {}
 
-    if exp_section := get_experience_section():
-        main_cv.add_section(exp_section)
-        
-    if edu_section := get_education_section():
-        main_cv.add_section(edu_section)
-    
-    if skills_section := get_skills_section():
-        main_cv.add_section(skills_section)
+    section_getters = {
+        "summary": get_summary_data,
+        "experience": get_experience_data,
+        "education": get_education_data,
+        "skills": get_skills_data,
+        "projects": get_projects_data,
+        "certificates": get_certificates_data,
+        "languages": get_languages_data,
+        "awards": get_awards_data,
+    }
 
-    if projects_section := get_projects_section():
-        main_cv.add_section(projects_section)
+    for section_type, getter_func in section_getters.items():
+        if section_data := getter_func():
+            sections_to_create[section_type] = section_data
 
-    if certs_section := get_certificates_section():
-        main_cv.add_section(certs_section)
-
-    if langs_section := get_languages_section():
-        main_cv.add_section(langs_section)
-
-    if awards_section := get_awards_section():
-        main_cv.add_section(awards_section)
+    section_factory = SectionFactory()
+    for section_type, section_data in sections_to_create.items():
+        try:
+            if not section_data: continue
+            section = section_factory.create_section(section_type, section_data)
+            main_cv.add_section(section)
+        except (SectionError, ValidationError) as e:
+            print(f"Błąd podczas tworzenia sekcji '{section_type}': {e}")
     
     print("\n--- Krok 3: Generowanie PDF ---")
     if not main_cv.sections:
@@ -276,7 +282,7 @@ def run_cv_creator():
             output_path=output_filename
         )
         print(f"\nCV zostało pomyślnie wygenerowane do pliku: {output_filename}")
-    except GenerationError as e:
+    except (GenerationError, FileNotFoundError) as e:
         print(f"\nNiestety, wystąpił krytyczny błąd podczas generowania PDF: {e}")
         print("Upewnij się, że masz zainstalowanego LaTeX-a i wszystkie zależności.")
     except Exception as e:

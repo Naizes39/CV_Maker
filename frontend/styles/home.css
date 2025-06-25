@@ -23,21 +23,6 @@ body {
     z-index: 1;
 }
 
-.cta button {
-    background-color: #007bff;
-    color: white;
-    padding: 15px 30px;
-    border: none;
-    border-radius: 5px;
-    font-size: 1.2em;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-}
-
-.cta button:hover {
-    background-color: #0056b3;
-}
-
 .container h1 {
     font-size: 2.5em;
     color: #2c3e50;
@@ -60,14 +45,8 @@ body {
     flex-wrap: wrap;
 }
 
-button {
-    display: flex;
-    justify-content: center;
-    gap: 20px;
-    flex-wrap: wrap;
-}
-
-button {
+/* Styles for buttons within the .options container */
+.options button {
     background-color: #3498db;
     color: white;
     border: none;
@@ -76,8 +55,12 @@ button {
     font-size: 1.1em;
     cursor: pointer;
     transition: all 0.3s ease;
-    text-decoration: none;
-    display: inline-block;
     font-weight: 600;
-    box-shadow: 0 5px 15px rgba(52, 152, 219, 0)
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.options button:hover {
+    background-color: #2980b9;
+    box--shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+    transform: translateY(-2px);
 }

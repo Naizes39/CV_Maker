@@ -2,7 +2,9 @@ from flask import Flask, jsonify, send_file, request
 from cv_maker.models.cv import PersonalInfo, CV
 from cv_maker.models.section import *
 from cv_maker.services.strategy_pdf import LaTeXStrategy
+from cv_maker.services.builder_cv import CVBuilder
 from cv_maker.cv_exceptions import CVException, GenerationError
+from cv_maker.services.section_factory import SectionFactory, SectionError
 
 
 app = Flask(__name__)
@@ -22,101 +24,57 @@ def generate_cv():
         return jsonify({"error": "Invalid JSON payload"}), 400
 
     try:
-        personal_info_data = data.get('personal_info')
+        personal_info_data = data.get('personal_info', {})
         if not personal_info_data:
             return jsonify({"error": "Missing 'personal_info' in request"}), 400
 
-        personal_info = PersonalInfo(
-            first_name=personal_info_data.get('first_name', ''),
-            last_name=personal_info_data.get('last_name', ''),
-            email=personal_info_data.get('email', ''),
-            phone=personal_info_data.get('phone', ''),
-            profession=personal_info_data.get('profession', ''),
-            city=personal_info_data.get('city', ''),
-            country=personal_info_data.get('country', ''),
-            links=[
-                link for link in [
-                    personal_info_data.get('linkedin', '').strip(),
-                    personal_info_data.get('github', '').strip()
-                ] if link
-            ]
-        )
+        links = []
+        if linkedin_url := personal_info_data.pop('linkedin', None):
+            if linkedin_url.strip(): links.append(linkedin_url.strip())
+        if github_url := personal_info_data.pop('github', None):
+            if github_url.strip(): links.append(github_url.strip())
+
+        personal_info = PersonalInfo(**personal_info_data, links=links)
         main_cv = CV(personal_info=personal_info)
 
-        if 'summary' in data and data['summary']:
-            section = SummarySection(title="Summary")
-            section.summary = data['summary']
-            main_cv.add_section(section)
+        section_factory = SectionFactory()
 
-        if 'experience' in data:
-            section = ExperienceSection(title="Experience")
-            for entry_data in data.get('experience', []):
-                entry = ExperienceEntry(**entry_data)
-                section.add_experience(entry)
-            if section.entries:
-                main_cv.add_section(section)
+        sections_to_create = data.get('sections', {})
 
-        if 'education' in data:
-            section = EducationSection(title="Education")
-            for entry_data in data.get('education', []):
-                entry = EducationEntry(**entry_data)
-                section.add_education(entry)
-            if section.entries:
+        for section_type, section_data in sections_to_create.items():
+            try:
+                section = section_factory.create_section(section_type, section_data)
                 main_cv.add_section(section)
+            except SectionError as e:
+                app.logger.warning(f"Skipping unknown or invalid section type: {e}")
 
-        if 'skills' in data:
-            section = SkillsSection(title="Skills")
-            for cat in data['skills']:
-                category = cat.get('category')
-                skills = cat.get('skills', [])
-                for skill in skills:
-                    entry = SkillEntry(name=skill, level=category)
-                    section.add_skill(entry)
-            if section.entries:
-                main_cv.add_section(section)
-
-        if 'projects' in data:
-            section = ProjectsSection(title="Projects")
-            for entry_data in data.get('projects', []):
-                entry = ProjectEntry(**entry_data)
-                section.add_project(entry)
-            if section.entries:
-                main_cv.add_section(section)
-
-        if 'certificates' in data:
-            section = CertificatesSection(title="Certifications")
-            for entry_data in data.get('certificates', []):
-                entry = CertificateEntry(**entry_data)
-                section.add_certificate(entry)
-            if section.entries:
-                main_cv.add_section(section)
-
-        if 'languages' in data:
-            section = LanguagesSection(title="Languages")
-            for entry_data in data.get('languages', []):
-                entry = LanguageEntry(**entry_data)
-                section.add_language(entry)
-            if section.entries:
-                main_cv.add_section(section)
-
-        if 'awards' in data:
-            section = AwardsSection(title="Awards")
-            for entry_data in data.get('awards', []):
-                entry = AwardEntry(**entry_data)
-                section.add_award(entry)
-            if section.entries:
-                main_cv.add_section(section)
+        builder_config = data.get('builder_config', {})
+        if builder_config:
+            builder = CVBuilder(base_cv=main_cv)
+            if 'keep_last_n_experiences' in builder_config:
+                n = builder_config['keep_last_n_experiences']
+                if isinstance(n, int) and n > 0:
+                    builder.keep_last_n_experiences(n)
+            
+            if 'remove_sections' in builder_config:
+                titles_to_remove = builder_config['remove_sections']
+                if isinstance(titles_to_remove, list):
+                    for title in titles_to_remove:
+                        builder.remove_section(title)
+            final_sections = builder.build()
+        else:
+            final_sections = main_cv.sections
 
         output_filename = "generated_cv.pdf"
         strategy = LaTeXStrategy()
         strategy.generate(
             personal_info=main_cv.personal_info,
-            sections=main_cv.sections,
+            sections=final_sections,
             output_path=output_filename
         )
 
         return send_file(output_filename, as_attachment=True, download_name='cv.pdf', mimetype='application/pdf')
-    
+
     except TypeError as e:
         return jsonify({"error": f"Invalid data structure or missing key in JSON payload: {e}"}), 400
     except GenerationError as e:

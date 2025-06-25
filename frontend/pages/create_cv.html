@@ -53,7 +53,7 @@
             <fieldset>
                 <legend>Skills</legend>
                 <div id="skills-entries"></div>
-                <button type="button" onclick="addSkillCategory()">Add Skill Category</button>
+                <button type="button" class="btn-add" onclick="addSkillCategory()">+ Add Skill Category</button>
             </fieldset>
 
             <fieldset>
@@ -72,6 +72,29 @@
                 <legend>Awards and Honors</legend>
                 <div id="awards-entries"></div>
                 <button type="button" class="btn-add" onclick="addEntry('awards')">+ Add Award</button>
+            </fieldset>
+
+            <fieldset>
+                <legend>CV Customization (Optional)</legend>
+                <div class="form-grid-half">
+                    <div>
+                        <label for="keep_experiences">Keep only the most recent experiences:</label>
+                        <input type="number" id="keep_experiences" name="keep_last_n_experiences" min="1" placeholder="e.g., 3">
+                    </div>
+                    <div>
+                        <label for="remove_sections">Remove sections:</label>
+                        <select id="remove_sections" name="remove_sections" multiple>
+                            <option value="Work Experience">Work Experience</option>
+                            <option value="Education">Education</option>
+                            <option value="Projects">Projects</option>
+                            <option value="Technical Skills">Technical Skills</option>
+                            <option value="Languages">Languages</option>
+                            <option value="Certificates">Certificates</option>
+                            <option value="Awards and Honors">Awards and Honors</option>
+                        </select>
+                        <small>Hold Ctrl/Cmd to select multiple.</small>
+                    </div>
+                </div>
             </fieldset>
 
             <button type="submit" class="btn-submit">Generate CV</button>
@@ -187,206 +210,186 @@
     </div>
     
     <script>
-        function addEntry(sectionType) {
-            const container = document.getElementById(`${sectionType}-entries`);
-            const template = document.querySelector(`#templates .${sectionType}-entry`);
-            container.appendChild(template.cloneNode(true));
-        }
+      function addEntry(sectionType) {
+          const container = document.getElementById(`${sectionType}-entries`);
+          const template = document.querySelector(`#templates .${sectionType}-entry`);
+          if (template) {
+              container.appendChild(template.cloneNode(true));
+          }
+      }
 
-        function removeEntry(button) {
-            button.parentElement.remove();
-        }
+      function removeEntry(button) {
+          button.parentElement.remove();
+      }
 
-        function togglePresent(checkbox) {
-            const dateInput = checkbox.closest('div').querySelector('input[type="date"]');
-            if (dateInput) {
-                dateInput.disabled = checkbox.checked;
-                if (checkbox.checked) {
-                    dateInput.value = '';
-                }
-            }
-        }
+      function togglePresent(checkbox) {
+          const dateInput = checkbox.closest('div').querySelector('input[type="date"]');
+          if (dateInput) {
+              dateInput.disabled = checkbox.checked;
+              if (checkbox.checked) {
+                  dateInput.value = '';
+              }
+          }
+      }
 
-        function getEndDate(entryElement, fieldSuffix) {
-            const checkbox = entryElement.querySelector(`.present-checkbox[name$="${fieldSuffix}"]`);
-            if (checkbox && checkbox.checked) {
-                return 'Present';
-            }
-            const dateInput = entryElement.querySelector(`input[name$="${fieldSuffix}"]`);
-            return dateInput && dateInput.value ? dateInput.value : undefined;
-        }
+      function addSkillCategory() {
+          const container = document.getElementById('skills-entries');
+          const template = document.getElementById('skill-category-template');
+          if (template) {
+              container.appendChild(template.content.cloneNode(true));
+          }
+      }
 
-        document.getElementById('cv-form').addEventListener('submit', async function(event) {
-            event.preventDefault();
-            const form = event.target;
-            const submitButton = form.querySelector('button[type="submit"]');
-            const errorMessageDiv = document.getElementById('error-message');
-            errorMessageDiv.textContent = '';
-            submitButton.disabled = true;
-            submitButton.textContent = 'Generating...';
+      document.getElementById('cv-form').addEventListener('submit', async function(event) {
+          event.preventDefault();
+          const form = event.target;
+          const submitButton = form.querySelector('button[type="submit"]');
+          const errorMessageDiv = document.getElementById('error-message');
+          errorMessageDiv.textContent = '';
+          submitButton.disabled = true;
+          submitButton.textContent = 'Generating...';
 
-            // Helper functions
-            const getValue = (element, suffix) => {
-                const el = element.querySelector(`[name$="${suffix}"]`);
-                return el && el.value ? el.value.trim() : undefined;
-            };
+          const getValue = (element, name) => {
+              const el = element.querySelector(`[name="${name}"]`);
+              return el && el.value ? el.value.trim() : undefined;
+          };
+          const getList = (element, name) => {
+              const el = element.querySelector(`[name="${name}"]`);
+              return el && el.value ? el.value.trim().split('\n').map(s => s.trim()).filter(Boolean) : [];
+          };
+          const getEndDate = (entryElement, dateInputName) => {
+              const dateInput = entryElement.querySelector(`input[name="${dateInputName}"]`);
+              if (dateInput && dateInput.disabled) { 
+                  return 'Present';
+              }
+              return dateInput && dateInput.value ? dateInput.value : undefined;
+          };
 
-            const getList = (element, suffix) => {
-                const el = element.querySelector(`[name$="${suffix}"]`);
-                return el && el.value ? 
-                    el.value.trim().split('\n').map(s => s.trim()).filter(Boolean) : 
-                    undefined;
-            };
+          const data = {
+              personal_info: {
+                  first_name: getValue(form, 'first_name'),
+                  last_name: getValue(form, 'last_name'),
+                  email: getValue(form, 'email'),
+                  phone: getValue(form, 'phone'),
+                  profession: getValue(form, 'profession'),
+                  city: getValue(form, 'city'),
+                  country: getValue(form, 'country'),
+                  linkedin: getValue(form, 'linkedin'),
+                  github: getValue(form, 'github'),
+              },
+              sections: {}
+          };
 
-            // Build data structure
-            const data = {
-                personal_info: {
-                    first_name: getValue(form, 'first_name'),
-                    last_name: getValue(form, 'last_name'),
-                    email: getValue(form, 'email'),
-                    phone: getValue(form, 'phone'),
-                    profession: getValue(form, 'profession'),
-                    city: getValue(form, 'city'),
-                    country: getValue(form, 'country'),
-                    linkedin: getValue(form, 'linkedin'),
-                    github: getValue(form, 'github'),
-                }
-            };
+          const summaryText = getValue(form, 'summary_content');
+          if (summaryText) {
+              data.sections.summary = { title: "Summary", summary_text: summaryText };
+          }
 
-            // Summary
-            const summary = getValue(form, 'summary_content');
-            if (summary) data.summary = summary;
+          const experienceEntries = Array.from(document.querySelectorAll('#experience-entries .experience-entry')).map(entry => ({
+              job_title: getValue(entry, 'exp-job_title'), company_name: getValue(entry, 'exp-company_name'),
+              city: getValue(entry, 'exp-city'), country: getValue(entry, 'exp-country'),
+              start_date: getValue(entry, 'exp-start_date'), end_date: getEndDate(entry, 'exp-end_date'),
+              responsibilities: getList(entry, 'exp-responsibilities')
+          })).filter(e => e.job_title);
+          if (experienceEntries.length) data.sections.experience = { title: "Work Experience", entries: experienceEntries };
 
-            // Experience
-            const experienceEntries = Array.from(document.querySelectorAll('.experience-entry'))
-                .filter(entry => getValue(entry, 'job_title'))
-                .map(entry => ({
-                    job_title: getValue(entry, 'job_title'),
-                    company_name: getValue(entry, 'company_name'),
-                    city: getValue(entry, 'city'),
-                    country: getValue(entry, 'country'),
-                    start_date: getValue(entry, 'start_date'),
-                    end_date: getEndDate(entry, 'end_date'),
-                    responsibilities: getList(entry, 'responsibilities')
-                }));
-            if (experienceEntries.length) data.experience = experienceEntries;
+          const educationEntries = Array.from(document.querySelectorAll('#education-entries .education-entry')).map(entry => ({
+              university_name: getValue(entry, 'edu-university_name'), degree: getValue(entry, 'edu-degree'),
+              field_of_study: getValue(entry, 'edu-field_of_study'), specialization: getValue(entry, 'edu-specialization'),
+              city: getValue(entry, 'edu-city'), country: getValue(entry, 'edu-country'),
+              start_date: getValue(entry, 'edu-start_date'), end_date: getEndDate(entry, 'edu-end_date'),
+              gpa: getValue(entry, 'edu-gpa') ? parseFloat(getValue(entry, 'edu-gpa')) : undefined
+          })).filter(e => e.university_name);
+          if (educationEntries.length) data.sections.education = { title: "Education", entries: educationEntries };
 
-            // Education
-            const educationEntries = Array.from(document.querySelectorAll('.education-entry'))
-                .filter(entry => getValue(entry, 'university_name'))
-                .map(entry => ({
-                    university_name: getValue(entry, 'university_name'),
-                    degree: getValue(entry, 'degree'),
-                    field_of_study: getValue(entry, 'field_of_study'),
-                    specialization: getValue(entry, 'specialization'),
-                    city: getValue(entry, 'city'),
-                    country: getValue(entry, 'country'),
-                    start_date: getValue(entry, 'start_date'),
-                    end_date: getEndDate(entry, 'end_date'),
-                    gpa: getValue(entry, 'gpa') ? parseFloat(getValue(entry, 'gpa')) : undefined
-                }));
-            if (educationEntries.length) data.education = educationEntries;
+          const projectEntries = Array.from(document.querySelectorAll('#projects-entries .projects-entry')).map(entry => ({
+              name: getValue(entry, 'proj-name'), url: getValue(entry, 'proj-url'),
+              start_date: getValue(entry, 'proj-start_date'), end_date: getEndDate(entry, 'proj-end_date'),
+              technologies: getList(entry, 'proj-technologies'), responsibilities: getList(entry, 'proj-responsibilities')
+          })).filter(e => e.name);
+          if (projectEntries.length) data.sections.projects = { title: "Projects", entries: projectEntries };
 
-            // Projects
-            const projectEntries = Array.from(document.querySelectorAll('.projects-entry'))
-                .filter(entry => getValue(entry, 'name'))
-                .map(entry => ({
-                    name: getValue(entry, 'name'),
-                    url: getValue(entry, 'url'),
-                    start_date: getValue(entry, 'start_date'),
-                    end_date: getEndDate(entry, 'end_date'),
-                    technologies: getList(entry, 'technologies'),
-                    responsibilities: getList(entry, 'responsibilities')
-                }));
-            if (projectEntries.length) data.projects = projectEntries;
+          const skillEntries = [];
+          document.querySelectorAll('#skills-entries .skills-category-entry').forEach(catEntry => {
+              const category = getValue(catEntry, 'skills-category');
+              const skills = getList(catEntry, 'skills-list');
+              if (category && skills.length > 0) {
+                  skills.forEach(skillName => skillEntries.push({ name: skillName, level: category }));
+              }
+          });
+          if (skillEntries.length) data.sections.skills = { title: "Technical Skills", entries: skillEntries };
 
-            // Languages
-            const languageEntries = Array.from(document.querySelectorAll('.languages-entry'))
-                .filter(entry => getValue(entry, 'language'))
-                .map(entry => ({
-                    language: getValue(entry, 'language'),
-                    proficiency: getValue(entry, 'proficiency')
-                }));
-            if (languageEntries.length) data.languages = languageEntries;
+          const languageEntries = Array.from(document.querySelectorAll('#languages-entries .languages-entry')).map(entry => ({
+              language: getValue(entry, 'lang-language'), proficiency: getValue(entry, 'lang-proficiency')
+          })).filter(e => e.language);
+          if (languageEntries.length) data.sections.languages = { title: "Languages", entries: languageEntries };
 
-            // Certificates
-            const certificateEntries = Array.from(document.querySelectorAll('.certificates-entry'))
-                .filter(entry => getValue(entry, 'name'))
-                .map(entry => ({
-                    name: getValue(entry, 'name'),
-                    issuing_organization: getValue(entry, 'issuing_organization'),
-                    issue_date: getValue(entry, 'issue_date'),
-                    expiration_date: getValue(entry, 'expiration_date'),
-                    credential_id: getValue(entry, 'credential_id'),
-                    credential_url: getValue(entry, 'credential_url')
-                }));
-            if (certificateEntries.length) data.certificates = certificateEntries;
+          const certificateEntries = Array.from(document.querySelectorAll('#certificates-entries .certificates-entry')).map(entry => ({
+              name: getValue(entry, 'cert-name'), issuing_organization: getValue(entry, 'cert-issuing_organization'),
+              issue_date: getValue(entry, 'cert-issue_date'), expiration_date: getEndDate(entry, 'cert-expiration_date'),
+              credential_id: getValue(entry, 'cert-credential_id'), credential_url: getValue(entry, 'cert-credential_url')
+          })).filter(e => e.name);
+          if (certificateEntries.length) data.sections.certificates = { title: "Certificates", entries: certificateEntries };
 
-            // Awards
-            const awardEntries = Array.from(document.querySelectorAll('.awards-entry'))
-                .filter(entry => getValue(entry, 'name'))
-                .map(entry => ({
-                    name: getValue(entry, 'name'),
-                    awarded_by: getValue(entry, 'awarded_by'),
-                    date: getValue(entry, 'date'),
-                    description: getValue(entry, 'description')
-                }));
-            if (awardEntries.length) data.awards = awardEntries;
+          const awardEntries = Array.from(document.querySelectorAll('#awards-entries .awards-entry')).map(entry => ({
+              name: getValue(entry, 'award-name'), awarded_by: getValue(entry, 'award-awarded_by'),
+              date: getValue(entry, 'award-date'), description: getValue(entry, 'award-description')
+          })).filter(e => e.name);
+          if (awardEntries.length) data.sections.awards = { title: "Awards and Honors", entries: awardEntries };
 
-            // Skill Categories
-            const skillCategories = Array.from(document.querySelectorAll('.skills-category-entry'))
-                .map(entry => ({
-                    category: entry.querySelector('[name="skills-category"]').value.trim(),
-                    skills: entry.querySelector('[name="skills-list"]').value
-                        .split('\n').map(s => s.trim()).filter(Boolean)
-                }))
-                .filter(cat => cat.category && cat.skills.length);
+          data.builder_config = {};
 
-            if (skillCategories.length) data.skills = skillCategories;
+          const keep_n_value = document.getElementById('keep_experiences').value;
+          if (keep_n_value) {
+              data.builder_config.keep_last_n_experiences = parseInt(keep_n_value, 10);
+          }
 
-            // Send to API
-            try {
-                const response = await fetch('/api/generate_cv', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data),
-                });
+          const sectionsToRemoveSelect = document.getElementById('remove_sections');
+          const sectionsToRemove = Array.from(sectionsToRemoveSelect.selectedOptions).map(option => option.value);
+          if (sectionsToRemove.length > 0) {
+              data.builder_config.remove_sections = sectionsToRemove;
+          }
 
-                if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.error || 'Failed to generate CV');
-                }
+          if (Object.keys(data.builder_config).length === 0) {
+              delete data.builder_config;
+          }
+          try {
+              const response = await fetch('/api/generate_cv', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(data),
+              });
 
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'CV.pdf';
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                a.remove();
+              if (!response.ok) {
+                  const errorData = await response.json();
+                  throw new Error(errorData.error || 'Failed to generate CV');
+              }
 
-            } catch (error) {
-                errorMessageDiv.textContent = `Error: ${error.message}`;
-            } finally {
-                submitButton.disabled = false;
-                submitButton.textContent = 'Generate CV';
-            }
-        });
+              const blob = await response.blob();
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.style.display = 'none';
+              a.href = url;
+              a.download = 'cv.pdf';
+              document.body.appendChild(a);
+              a.click();
+              window.URL.revokeObjectURL(url);
+              a.remove();
 
-        function addSkillCategory() {
-            const container = document.getElementById('skills-entries');
-            const template = document.getElementById('skill-category-template');
-            container.appendChild(template.content.cloneNode(true));
-        }
+          } catch (error) {
+              errorMessageDiv.textContent = `Error: ${error.message}`;
+          } finally {
+              submitButton.disabled = false;
+              submitButton.textContent = 'Generate CV';
+          }
+      });
     </script>
 
     <template id="skill-category-template">
       <div class="skills-category-entry">
         <input type="text" name="skills-category" placeholder="Category (e.g. Programming Languages)" required>
         <textarea name="skills-list" placeholder="List skills, one per line" required></textarea>
-        <button type="button" onclick="this.parentElement.remove()">Remove Category</button>
+        <button type="button" class="btn-remove" onclick="this.parentElement.remove()">Remove</button>
       </div>
     </template>
 </body>

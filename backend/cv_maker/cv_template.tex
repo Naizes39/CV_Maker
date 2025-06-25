@@ -35,7 +35,7 @@
 \BLOCK{for section in sections}
     \section*{\VAR{ section.title|latex_escape }}
     
-    \BLOCK{if section.title == 'Summary'}
+    \BLOCK{if section.title == 'Summary' and section.summary}
         \VAR{ section.summary|latex_escape }
 
     \BLOCK{elif section.title == 'Skills' or section.title == 'Technical Skills'}
@@ -53,23 +53,32 @@
 
             \BLOCK{elif entry.__class__.__name__ == 'ExperienceEntry'}
                 \textbf{\VAR{ entry.job_title|latex_escape }} at \VAR{ entry.company_name|latex_escape } \hfill \VAR{ entry.start_date|latex_escape } - \VAR{ entry.end_date|latex_escape }
+                \BLOCK{if entry.responsibilities}
                 \begin{itemize}[label=-, leftmargin=1.5em, topsep=0pt, itemsep=0pt]
                 \BLOCK{for point in entry.responsibilities}
                     \item \VAR{ point|latex_escape }
                 \BLOCK{endfor}
                 \end{itemize}
+                \BLOCK{endif}
 
             \BLOCK{elif entry.__class__.__name__ == 'ProjectEntry'}
                 \textbf{\VAR{ entry.name|latex_escape }} \hfill \VAR{ entry.end_date|latex_escape } \\
+                \BLOCK{if entry.technologies}
                 \textit{Technologies: \VAR{ entry.technologies|join(', ')|latex_escape }}
+                \BLOCK{endif}
+                \BLOCK{if entry.responsibilities}
                 \begin{itemize}[label=-, leftmargin=1.5em, topsep=0pt, itemsep=0pt]
                 \BLOCK{for point in entry.responsibilities}
                     \item \VAR{ point|latex_escape }
                 \BLOCK{endfor}
                 \end{itemize}
+                \BLOCK{endif}
 
             \BLOCK{elif entry.__class__.__name__ == 'CertificateEntry'}
-                \VAR{ entry.name|latex_escape }
+                \textbf{\VAR{ entry.name|latex_escape }} from \VAR{ entry.issuing_organization|latex_escape } \hfill \VAR{ entry.issue_date|latex_escape }
+                \BLOCK{if entry.credential_url}
+                    \\ \textit{\href{\VAR{ entry.credential_url|latex_escape }}{View Credential}}
+                \BLOCK{endif}
 
             \BLOCK{elif entry.__class__.__name__ == 'LanguageEntry'}
                 \textbf{\VAR{ entry.language|latex_escape }}: \VAR{ entry.proficiency|latex_escape }
