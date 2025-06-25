@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create New CV</title>
+    <link rel="stylesheet" href="../styles/create_cv.css">
+</head>
+<body>
+    <div class="container">
+        <h1>CV Generator</h1>
+        <p>Fill out the fields below to generate your CV in PDF format.</p>
+
+        <form id="cv-form">
+            <fieldset>
+                <legend>Personal Data</legend>
+                <div class="form-grid">
+                    <input type="text" name="first_name" placeholder="First Name" required>
+                    <input type="text" name="last_name" placeholder="Last Name" required>
+                    <input type="email" name="email" placeholder="Email Address" required>
+                    <input type="tel" name="phone" placeholder="Phone Number" required>
+                    <input type="text" name="profession" placeholder="Profession/Job Title" required>
+                    <input type="text" name="city" placeholder="City" required>
+                    <input type="text" name="country" placeholder="Country" required>
+                    <input type="url" name="linkedin" placeholder="LinkedIn Profile URL">
+                    <input type="url" name="github" placeholder="GitHub Profile URL">
+                </div>
+            </fieldset>
+
+            <fieldset>
+                <legend>Professional Summary</legend>
+                <textarea name="summary_content" rows="4" placeholder="Your professional summary, goals, key competencies..."></textarea>
+            </fieldset>
+
+            <fieldset>
+                <legend>Work Experience</legend>
+                <div id="experience-entries"></div>
+                <button type="button" class="btn-add" onclick="addEntry('experience')">+ Add Experience</button>
+            </fieldset>
+
+            <fieldset>
+                <legend>Education</legend>
+                <div id="education-entries"></div>
+                <button type="button" class="btn-add" onclick="addEntry('education')">+ Add Education</button>
+            </fieldset>
+            
+            <fieldset>
+                <legend>Projects</legend>
+                <div id="projects-entries"></div>
+                <button type="button" class="btn-add" onclick="addEntry('projects')">+ Add Project</button>
+            </fieldset>
+
+            <fieldset>
+                <legend>Skills</legend>
+                <div id="skills-entries"></div>
+                <button type="button" onclick="addSkillCategory()">Add Skill Category</button>
+            </fieldset>
+
+            <fieldset>
+                <legend>Languages</legend>
+                <div id="languages-entries"></div>
+                <button type="button" class="btn-add" onclick="addEntry('languages')">+ Add Language</button>
+            </fieldset>
+
+            <fieldset>
+                <legend>Certificates</legend>
+                <div id="certificates-entries"></div>
+                <button type="button" class="btn-add" onclick="addEntry('certificates')">+ Add Certificate</button>
+            </fieldset>
+
+            <fieldset>
+                <legend>Awards and Honors</legend>
+                <div id="awards-entries"></div>
+                <button type="button" class="btn-add" onclick="addEntry('awards')">+ Add Award</button>
+            </fieldset>
+
+            <button type="submit" class="btn-submit">Generate CV</button>
+            <div id="error-message" class="error-message"></div>
+        </form>
+    </div>
+
+    <div id="templates" style="display: none;">
+
+        <div class="dynamic-entry experience-entry">
+            <input type="text" name="exp-job_title" placeholder="Job Title" required>
+            <input type="text" name="exp-company_name" placeholder="Company Name" required>
+            <div class="form-grid">
+                <input type="text" name="exp-city" placeholder="City">
+                <input type="text" name="exp-country" placeholder="Country">
+            </div>
+            <div class="form-grid-half">
+                <div>
+                    <label>Start Date:</label>
+                    <input type="date" name="exp-start_date" required>
+                </div>
+                <div>
+                    <label>End Date:</label>
+                    <input type="date" name="exp-end_date">
+                    <label class="inline-label"><input type="checkbox" class="present-checkbox" onchange="togglePresent(this)"> Present</label>
+                </div>
+            </div>
+            <textarea name="exp-responsibilities" placeholder="Responsibilities (one per line)"></textarea>
+            <button type="button" class="btn-remove" onclick="removeEntry(this)">Remove</button>
+        </div>
+
+        <div class="dynamic-entry education-entry">
+            <input type="text" name="edu-university_name" placeholder="University Name" required>
+            <input type="text" name="edu-degree" placeholder="Degree (e.g., Bachelor of Science)" required>
+            <input type="text" name="edu-field_of_study" placeholder="Field of Study" required>
+            <input type="text" name="edu-specialization" placeholder="Specialization (optional)">
+             <div class="form-grid">
+                <input type="text" name="edu-city" placeholder="City" required>
+                <input type="text" name="edu-country" placeholder="Country" required>
+            </div>
+            <div class="form-grid-half">
+                <div>
+                    <label>Start Date:</label>
+                    <input type="date" name="edu-start_date">
+                </div>
+                <div>
+                    <label>End Date:</label>
+                    <input type="date" name="edu-end_date">
+                    <label class="inline-label"><input type="checkbox" class="present-checkbox" onchange="togglePresent(this)"> Present</label>
+                </div>
+            </div>
+            <label>GPA (optional):</label>
+            <input type="number" step="0.01" min="0" max="5" name="edu-gpa" placeholder="e.g., 4.5">
+            <button type="button" class="btn-remove" onclick="removeEntry(this)">Remove</button>
+        </div>
+        
+        <div class="dynamic-entry projects-entry">
+            <input type="text" name="proj-name" placeholder="Project Name" required>
+            <input type="url" name="proj-url" placeholder="Project URL (optional)">
+            <div class="form-grid-half">
+                 <div>
+                    <label>Start Date:</label>
+                    <input type="date" name="proj-start_date">
+                </div>
+                <div>
+                    <label>End Date:</label>
+                    <input type="date" name="proj-end_date">
+                     <label class="inline-label"><input type="checkbox" class="present-checkbox" onchange="togglePresent(this)"> Present</label>
+                </div>
+            </div>
+            <textarea name="proj-technologies" placeholder="Technologies (one per line)"></textarea>
+            <textarea name="proj-responsibilities" placeholder="Description / Responsibilities (one per line)"></textarea>
+            <button type="button" class="btn-remove" onclick="removeEntry(this)">Remove</button>
+        </div>
+
+        <div class="dynamic-entry languages-entry">
+            <div class="form-grid-half">
+                <input type="text" name="lang-language" placeholder="Language" required>
+                <input type="text" name="lang-proficiency" placeholder="Proficiency (e.g., B2, C1, Native)" required>
+            </div>
+            <button type="button" class="btn-remove" onclick="removeEntry(this)">Remove</button>
+        </div>
+
+        <div class="dynamic-entry certificates-entry">
+            <input type="text" name="cert-name" placeholder="Certificate Name" required>
+            <input type="text" name="cert-issuing_organization" placeholder="Issuing Organization" required>
+            <div class="form-grid-half">
+                <div>
+                    <label>Issue Date:</label>
+                    <input type="date" name="cert-issue_date" required>
+                </div>
+                <div>
+                    <label>Expiration Date:</label>
+                    <input type="date" name="cert-expiration_date">
+                </div>
+            </div>
+            <input type="text" name="cert-credential_id" placeholder="Credential ID (optional)">
+            <input type="url" name="cert-credential_url" placeholder="Credential URL (optional)">
+            <button type="button" class="btn-remove" onclick="removeEntry(this)">Remove</button>
+        </div>
+
+        <div class="dynamic-entry awards-entry">
+            <input type="text" name="award-name" placeholder="Award or Honor Name" required>
+            <input type="text" name="award-awarded_by" placeholder="Awarded by" required>
+            <div>
+                <label>Date Received:</label>
+                <input type="date" name="award-date" required>
+            </div>
+            <textarea name="award-description" placeholder="Description (optional)"></textarea>
+            <button type="button" class="btn-remove" onclick="removeEntry(this)">Remove</button>
+        </div>
+
+    </div>
+    
+    <script>
+        function addEntry(sectionType) {
+            const container = document.getElementById(`${sectionType}-entries`);
+            const template = document.querySelector(`#templates .${sectionType}-entry`);
+            container.appendChild(template.cloneNode(true));
+        }
+
+        function removeEntry(button) {
+            button.parentElement.remove();
+        }
+
+        function togglePresent(checkbox) {
+            const dateInput = checkbox.closest('div').querySelector('input[type="date"]');
+            if (dateInput) {
+                dateInput.disabled = checkbox.checked;
+                if (checkbox.checked) {
+                    dateInput.value = '';
+                }
+            }
+        }
+
+        function getEndDate(entryElement, fieldSuffix) {
+            const checkbox = entryElement.querySelector(`.present-checkbox[name$="${fieldSuffix}"]`);
+            if (checkbox && checkbox.checked) {
+                return 'Present';
+            }
+            const dateInput = entryElement.querySelector(`input[name$="${fieldSuffix}"]`);
+            return dateInput && dateInput.value ? dateInput.value : undefined;
+        }
+
+        document.getElementById('cv-form').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const form = event.target;
+            const submitButton = form.querySelector('button[type="submit"]');
+            const errorMessageDiv = document.getElementById('error-message');
+            errorMessageDiv.textContent = '';
+            submitButton.disabled = true;
+            submitButton.textContent = 'Generating...';
+
+            // Helper functions
+            const getValue = (element, suffix) => {
+                const el = element.querySelector(`[name$="${suffix}"]`);
+                return el && el.value ? el.value.trim() : undefined;
+            };
+
+            const getList = (element, suffix) => {
+                const el = element.querySelector(`[name$="${suffix}"]`);
+                return el && el.value ? 
+                    el.value.trim().split('\n').map(s => s.trim()).filter(Boolean) : 
+                    undefined;
+            };
+
+            // Build data structure
+            const data = {
+                personal_info: {
+                    first_name: getValue(form, 'first_name'),
+                    last_name: getValue(form, 'last_name'),
+                    email: getValue(form, 'email'),
+                    phone: getValue(form, 'phone'),
+                    profession: getValue(form, 'profession'),
+                    city: getValue(form, 'city'),
+                    country: getValue(form, 'country'),
+                    linkedin: getValue(form, 'linkedin'),
+                    github: getValue(form, 'github'),
+                }
+            };
+
+            // Summary
+            const summary = getValue(form, 'summary_content');
+            if (summary) data.summary = summary;
+
+            // Experience
+            const experienceEntries = Array.from(document.querySelectorAll('.experience-entry'))
+                .filter(entry => getValue(entry, 'job_title'))
+                .map(entry => ({
+                    job_title: getValue(entry, 'job_title'),
+                    company_name: getValue(entry, 'company_name'),
+                    city: getValue(entry, 'city'),
+                    country: getValue(entry, 'country'),
+                    start_date: getValue(entry, 'start_date'),
+                    end_date: getEndDate(entry, 'end_date'),
+                    responsibilities: getList(entry, 'responsibilities')
+                }));
+            if (experienceEntries.length) data.experience = experienceEntries;
+
+            // Education
+            const educationEntries = Array.from(document.querySelectorAll('.education-entry'))
+                .filter(entry => getValue(entry, 'university_name'))
+                .map(entry => ({
+                    university_name: getValue(entry, 'university_name'),
+                    degree: getValue(entry, 'degree'),
+                    field_of_study: getValue(entry, 'field_of_study'),
+                    specialization: getValue(entry, 'specialization'),
+                    city: getValue(entry, 'city'),
+                    country: getValue(entry, 'country'),
+                    start_date: getValue(entry, 'start_date'),
+                    end_date: getEndDate(entry, 'end_date'),
+                    gpa: getValue(entry, 'gpa') ? parseFloat(getValue(entry, 'gpa')) : undefined
+                }));
+            if (educationEntries.length) data.education = educationEntries;
+
+            // Projects
+            const projectEntries = Array.from(document.querySelectorAll('.projects-entry'))
+                .filter(entry => getValue(entry, 'name'))
+                .map(entry => ({
+                    name: getValue(entry, 'name'),
+                    url: getValue(entry, 'url'),
+                    start_date: getValue(entry, 'start_date'),
+                    end_date: getEndDate(entry, 'end_date'),
+                    technologies: getList(entry, 'technologies'),
+                    responsibilities: getList(entry, 'responsibilities')
+                }));
+            if (projectEntries.length) data.projects = projectEntries;
+
+            // Languages
+            const languageEntries = Array.from(document.querySelectorAll('.languages-entry'))
+                .filter(entry => getValue(entry, 'language'))
+                .map(entry => ({
+                    language: getValue(entry, 'language'),
+                    proficiency: getValue(entry, 'proficiency')
+                }));
+            if (languageEntries.length) data.languages = languageEntries;
+
+            // Certificates
+            const certificateEntries = Array.from(document.querySelectorAll('.certificates-entry'))
+                .filter(entry => getValue(entry, 'name'))
+                .map(entry => ({
+                    name: getValue(entry, 'name'),
+                    issuing_organization: getValue(entry, 'issuing_organization'),
+                    issue_date: getValue(entry, 'issue_date'),
+                    expiration_date: getValue(entry, 'expiration_date'),
+                    credential_id: getValue(entry, 'credential_id'),
+                    credential_url: getValue(entry, 'credential_url')
+                }));
+            if (certificateEntries.length) data.certificates = certificateEntries;
+
+            // Awards
+            const awardEntries = Array.from(document.querySelectorAll('.awards-entry'))
+                .filter(entry => getValue(entry, 'name'))
+                .map(entry => ({
+                    name: getValue(entry, 'name'),
+                    awarded_by: getValue(entry, 'awarded_by'),
+                    date: getValue(entry, 'date'),
+                    description: getValue(entry, 'description')
+                }));
+            if (awardEntries.length) data.awards = awardEntries;
+
+            // Skill Categories
+            const skillCategories = Array.from(document.querySelectorAll('.skills-category-entry'))
+                .map(entry => ({
+                    category: entry.querySelector('[name="skills-category"]').value.trim(),
+                    skills: entry.querySelector('[name="skills-list"]').value
+                        .split('\n').map(s => s.trim()).filter(Boolean)
+                }))
+                .filter(cat => cat.category && cat.skills.length);
+
+            if (skillCategories.length) data.skills = skillCategories;
+
+            // Send to API
+            try {
+                const response = await fetch('/api/generate_cv', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data),
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Failed to generate CV');
+                }
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'CV.pdf';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                a.remove();
+
+            } catch (error) {
+                errorMessageDiv.textContent = `Error: ${error.message}`;
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Generate CV';
+            }
+        });
+
+        function addSkillCategory() {
+            const container = document.getElementById('skills-entries');
+            const template = document.getElementById('skill-category-template');
+            container.appendChild(template.content.cloneNode(true));
+        }
+    </script>
+
+    <template id="skill-category-template">
+      <div class="skills-category-entry">
+        <input type="text" name="skills-category" placeholder="Category (e.g. Programming Languages)" required>
+        <textarea name="skills-list" placeholder="List skills, one per line" required></textarea>
+        <button type="button" onclick="this.parentElement.remove()">Remove Category</button>
+      </div>
+    </template>
+</body>
+</html>

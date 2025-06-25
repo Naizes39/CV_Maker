@@ -27,4 +27,3 @@ docker-compose.override.yml
 *.swp
 *.swo
 .history/
-database/
