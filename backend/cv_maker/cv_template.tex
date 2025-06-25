@@ -1,0 +1,98 @@
+\documentclass[a4paper,10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{geometry}
+\usepackage[shortlabels]{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{titlesec}
+\usepackage{helvet}
+
+\geometry{top=0.5in, bottom=0.5in, left=0.7in, right=0.7in}
+\renewcommand{\familydefault}{\sfdefault}
+\linespread{0.9}
+\pagestyle{empty}
+
+\titlespacing*{\section}{0pt}{1ex plus 1ex minus 1ex}{0.5ex plus 0.5ex minus 0.5ex}
+
+\newlist{cvitems}{itemize}{1}
+\setlist[cvitems]{leftmargin=0pt, label={}, topsep=1pt, itemsep=0.8em, parsep=1pt}
+
+\begin{document}
+
+\begin{center}
+    {\LARGE \textbf{\VAR{ info.first_name|latex_escape } \VAR{ info.last_name|latex_escape }}} \\ \vspace{1pt}
+    \small
+    \VAR{ info.profession|latex_escape } \\
+    \href{mailto:\VAR{ info.email|latex_escape }}{\VAR{ info.email|latex_escape }} $|$
+    \BLOCK{for link in info.links}
+        \BLOCK{if 'linkedin.com' in link}\href{\VAR{ link|latex_escape }}{LinkedIn}\BLOCK{elif 'github.com' in link}\href{\VAR{ link|latex_escape }}{GitHub}\BLOCK{else}\href{\VAR{ link|latex_escape }}{\VAR{ link.replace("https://", "")|latex_escape }}\BLOCK{endif}
+        \BLOCK{if not loop.last} $|$ \BLOCK{endif}
+    \BLOCK{endfor}
+    $|$ \VAR{ info.phone|latex_escape } \\
+    \VAR{ info.city|latex_escape }, \VAR{ info.country|latex_escape } \\
+\end{center}
+
+\BLOCK{for section in sections}
+    \section*{\VAR{ section.title|latex_escape }}
+    
+    \BLOCK{if section.title == 'Summary'}
+        \VAR{ section.summary|latex_escape }
+
+    \BLOCK{elif section.title == 'Skills' or section.title == 'Technical Skills'}
+        \BLOCK{for category, skills in section.skills_by_category.items()}
+            \noindent\textbf{\VAR{ category|latex_escape }:} \VAR{ skills|join(', ')|latex_escape } \\
+        \BLOCK{endfor}
+
+    \BLOCK{else}
+        \begin{cvitems}
+        \BLOCK{for entry in section.entries}
+            \item
+            \BLOCK{if entry.__class__.__name__ == 'EducationEntry'}
+                \textbf{\VAR{ entry.university_name|latex_escape }} \hfill \textbf{\VAR{ entry.end_date|latex_escape }} \\
+                \textit{\VAR{ entry.degree|latex_escape } — \VAR{ entry.field_of_study|latex_escape }}
+
+            \BLOCK{elif entry.__class__.__name__ == 'ExperienceEntry'}
+                \textbf{\VAR{ entry.job_title|latex_escape }} at \VAR{ entry.company_name|latex_escape } \hfill \VAR{ entry.start_date|latex_escape } - \VAR{ entry.end_date|latex_escape }
+                \begin{itemize}[label=-, leftmargin=1.5em, topsep=0pt, itemsep=0pt]
+                \BLOCK{for point in entry.responsibilities}
+                    \item \VAR{ point|latex_escape }
+                \BLOCK{endfor}
+                \end{itemize}
+
+            \BLOCK{elif entry.__class__.__name__ == 'ProjectEntry'}
+                \textbf{\VAR{ entry.name|latex_escape }} \hfill \VAR{ entry.end_date|latex_escape } \\
+                \textit{Technologies: \VAR{ entry.technologies|join(', ')|latex_escape }}
+                \begin{itemize}[label=-, leftmargin=1.5em, topsep=0pt, itemsep=0pt]
+                \BLOCK{for point in entry.responsibilities}
+                    \item \VAR{ point|latex_escape }
+                \BLOCK{endfor}
+                \end{itemize}
+
+            \BLOCK{elif entry.__class__.__name__ == 'CertificateEntry'}
+                \VAR{ entry.name|latex_escape }
+
+            \BLOCK{elif entry.__class__.__name__ == 'LanguageEntry'}
+                \textbf{\VAR{ entry.language|latex_escape }}: \VAR{ entry.proficiency|latex_escape }
+            
+            \BLOCK{elif entry.__class__.__name__ == 'AwardEntry'}
+                 \textbf{\VAR{ entry.name|latex_escape }} from \VAR{ entry.awarded_by|latex_escape } \hfill \VAR{ entry.date|latex_escape } \\
+                 \BLOCK{if entry.description}
+                     \textit{\VAR{ entry.description|latex_escape }}
+                 \BLOCK{endif}
+
+            \BLOCK{elif entry.__class__.__name__ == 'PublicationEntry'}
+                 \textbf{\VAR{ entry.title|latex_escape }} \hfill \VAR{ entry.date|latex_escape } \\
+                 \textit{\VAR{ entry.authors|join(', ')|latex_escape }} - \VAR{ entry.venue|latex_escape }
+            \BLOCK{endif}
+        \BLOCK{endfor}
+        \end{cvitems}
+    \BLOCK{endif}
+\BLOCK{endfor}
+
+\vspace{2\baselineskip}
+\noindent
+\textbf{Data Protection Clause}
+
+\noindent
+I hereby consent to the processing of my personal data for the purpose of conducting recruitment for the position for which I am applying.
+\end{document}
