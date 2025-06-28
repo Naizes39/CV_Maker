@@ -45,7 +45,6 @@ body {
     flex-wrap: wrap;
 }
 
-/* Styles for buttons within the .options container */
 .options button {
     background-color: #3498db;
     color: white;
