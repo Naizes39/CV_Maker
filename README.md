@@ -75,7 +75,7 @@ Poza spełnieniem minimalnych wymagań kursu, projekt wykorzystuje też inne tec
 
 ## Koncepcja Projektu
 
-Aplikacja została zaprojektowana z myślą o przyszłej rozbudowie, a jej pierwotna koncepcja zakładała stworzenie zaawansowanego systemu do zarządzania życiorysami.
+Aplikacja została zaprojektowana z myślą o przyszłej rozbudowie, a jej pierwotna koncepcja zakładała stworzenie zaawansowanego systemu do zarządzania CV.
 
 **Początkowa koncepcja projektu:**
 1.  **Główne CV i Baza Danych:** Użytkownik tworzyłby jedno, kompletne "CV-matkę", które zawierałoby wszystkie jego doświadczenia, umiejętności i projekty. Dane te miały być przechowywane w lokalnej bazie danych, co wyjaśnia obecność atrybutów `id` w klasach modeli – zostały one przygotowane z myślą działaniu na relacjach w bazach danych.
